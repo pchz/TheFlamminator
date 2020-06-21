@@ -348,3 +348,9 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+/FlammHelper/tournaments.txt
+/FlammHelper/tournaments.json
+/FlammHelper/test.json
+/FlammHelper/teams.json
+/FlammHelper/leagues.json
+/FlammHelper/games.json
