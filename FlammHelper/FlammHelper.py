@@ -1,9 +1,7 @@
 import json
+import sys
 import requests
-from dateutil.parser import parse
-
-#with open('games.json', 'w') as outfile:
-#    json.dump(games, outfile)
+import leaguepedia_parser
 
 API_KEY = '0TvQnueqKa5mxJntVWt0w4LpLfEkrV1Ta8rQBb9Z'  # public API key
 HEADERS = {
@@ -25,58 +23,91 @@ adc_icon = '<svg class="icon" width="16" height="48" viewBox="0 0 400 400" xmlns
 
 def get_teams_by_league(leagueName):
     r = requests.get(TEAMS_URL, headers=HEADERS)
+    storage = ""
     for data in r.json()['data']['teams']:
         try:
             if data['homeLeague']['name'] == leagueName:
-                name = data['name']
-                image_url = data['image']
-                players = data['players']
+                storage += make_html(data)
         except:
             pass
 
+    with open('players' + leagueName + '.html', 'a') as file:
+        file.write(storage)
+        print("Sauvegardé comme :" + 'players' + leagueName + '.html')
+
+def getRole(role):
+    if role == "jungle":
+        return jungle_icon
+    elif role == "top":
+        return top_icon
+    elif role == "bottom":
+        return adc_icon
+    elif role == "support":
+        return middle_icon
+    elif role == "mid":
+        return mid_icon
+
 def make_html(data):
-	logoUrl = data['image']
-	html_team = '''<tr>
-			        <td>
-			        <p>&nbsp;</p>
-			        </td>
-			        <td>&nbsp;</td>
-			        <td>&nbsp;</td>
-			        <td>&nbsp;</td>
-			        <td>&nbsp;</td>
-			        <td colspan="3">
-			        <h2 style="text-align: center;">&nbsp;<strong>&nbsp;</strong><strong>{name}</strong></h2>
-			        </td>
-		            </tr>'''.format(name = data['name'])
+    logoUrl = data['image']
+    html_team = '''<tr>
+                    <td>
+                    <p>&nbsp;</p>
+                    </td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td colspan="3">
+                    <h2 style="text-align: center;">&nbsp;<strong>&nbsp;</strong><strong>{name}</strong></h2>
+                    </td>
+                    </tr>'''.format(name = data['name'])
+    big_html_string = html_team
+    first = True
+    for i, player in enumerate(data['players']):
+        try:
+            if first:
+                    first = False
+                    html_first_player = '''<tr>
+                        <td rowspan="9" style="text-align: center;"><em><img height="80" src="{logo_url}" width="80" /></em></td>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td>{firstname} &quot;<strong>{pseudo}</strong>&quot; {lastname}</td>
+                        <td><em>{role}</em></td>
+                        </tr>'''.format(firstname = player['firstName'], 
+                                        lastname = player['lastName'],
+                                        pseudo = player['summonerName'],
+                                        role = getRole(player['role']),
+                                        logo_url = logoUrl)
+                    big_html_string += html_first_player
+            else:
+                html_player = '''<tr>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td>{firstname} &quot;<strong>{pseudo}</strong>&quot; {lastname}</td>
+                        <td><em>{role}</em></td>
+                        </tr>'''.format(firstname = player['firstName'], 
+                                        lastname = player['lastName'],
+                                        pseudo = player['summonerName'],
+                                        role = getRole(player['role']),)
+                big_html_string += html_player
+        except:
+            pass
 
-	html_first_player = '''<tr>
-					<td rowspan="9" style="text-align: center;"><em><img height="80" src="https://i.imgur.com/QbGJaK3.png" width="80" /></em></td>
-					<td>&nbsp;</td>
-					<td>&nbsp;</td>
-					<td>&nbsp;</td>
-					<td>&nbsp;</td>
-					<td><img alt="Flag" src="/img/flags/kr.png" /></td>
-					<td>{firstname} &quot;<strong>{pseudo}</strong>&quot; {lastname}</td>
-					<td><em>{role}</em></td>
-					</tr>'''.format(firstname = data['players']['firstName'], 
-									lastname = data['players']['lastName'],
-									pseudo = data['players']['summonerName'],
-									role = getRole(data['players']['role']),
-									logo_url = logoUrl)
-	html_player = '''<tr>
-					<td>&nbsp;</td>
-					<td>&nbsp;</td>
-					<td>&nbsp;</td>
-					<td>&nbsp;</td>
-					<td><img alt="Flag" src="/img/flags/kr.png" /></td>
-					<td>Kim &quot;<strong>Kiin</strong>&quot; Gi-in</td>
-					<td><em><img alt="" height="16" src="https://i.imgur.com/u5D7TLK.jpg" width="16" /></em></td>
-					</tr>'''.format(firstname = data['players']['firstName'], 
-									lastname = data['players']['lastName'],
-									pseudo = data['players']['summonerName'],
-									role = getRole(data['players']['role']),)
+    return big_html_string
 
+    big_html_string = ""
 
+def get_leagues():
+    r = requests.get(LEAGUES_URL, headers=HEADERS)
+    for data in r.json()['data']['leagues']:
+        print(data['name'])
 
-
-get_teams_by_league("LEC")
+print("Liste des ligues disponibles dans l'API :")
+get_leagues()
+var = input("Choisi une league: ")
+print("Tu as entré: " + var)
+get_teams_by_league(var)
